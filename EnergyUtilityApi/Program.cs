@@ -1,8 +1,15 @@
-using Microsoft.VisualBasic;
+using Microsoft.EntityFrameworkCore;
 
-var builder = WebApplication.CreateBuilder(args);
+WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
+var connString = builder.Configuration.getConnectionString("DefaultConnection");
+
+builder.Services.AddDbContext<EnergyUtilityDbContext>( // register DbContext
+    options => options.UseNpgsql(connString) // specify provider
+);
 // create a problem details response for caught errors
 builder.Services.AddProblemDetails();
+// add controllers
+builder.Services.AddControllers();
 
 WebApplication app = builder.Build();
 
@@ -12,7 +19,6 @@ if (!app.Environment.IsDevelopment())
 }
 
 app.UseStatusCodePages();
-
-app.MapGet("/", () => "Hello World!");
+// add middleware to use controllers
 app.MapControllers();
 app.Run();
