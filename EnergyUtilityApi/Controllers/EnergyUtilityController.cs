@@ -7,26 +7,35 @@ public class EnergyUtilityController : EnergyUtilityBaseController
         _service = service;
     }
 
-    // [HttpGet]
-    // public IActionResult GetEnergyConsumption([AsParameters] GetConsumptionRequest request)
-    // {
-    //     return Ok();
-    // }
-
-    // get data for postcodes: region, dno, median and mean elec consumption
     [HttpGet]
-    public async Task<IActionResult> GetDataByPostcode([FromQuery] string postcode)
+    public async Task<IActionResult> GetEnergyConsumption([FromQuery] GetConsumptionRequest request)
     {
         try
         {
-            var result = await _service.GetMedianElectricityCosumption(postcode);
-            return Ok(result);
+            //decimal result = await _service.GetElectricityConsumption(request);
+            return Ok(request);
         }
         catch (Exception)
         {
-            return StatusCode(500, "An error occured while retrieving recipes");
+            return StatusCode(500, "An error occured while retrieving consumption data");
         }
     }
+
+    // get data for postcodes: region, dno, median and mean elec consumption
+    // [HttpGet]
+    // public async Task<IActionResult> GetDataByPostcode([FromQuery] string postcode)
+    // {
+    //     try
+    //     {
+    //         // var result = await _service.GetMedianElectricityCosumption(postcode);
+    //         var result = await _service.GetNeedRegionId(postcode);
+    //         return Ok(result);
+    //     }
+    //     catch (Exception)
+    //     {
+    //         return StatusCode(500, "An error occured while retrieving recipes");
+    //     }
+    // }
     // [HttpGet]
     // public IActionResult GetDataByPostcodes([FromQuery(Name = "postcode")] string[] postcodes)
     // {

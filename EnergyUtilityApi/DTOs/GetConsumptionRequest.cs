@@ -7,15 +7,15 @@ public record GetConsumptionRequest
     [MinLength(6)]
     public string Postcode { get; set; }
     [Range(1, 7)]
-    public string PropertyType { get; set; }
+    public int? PropertyType { get; set; }
     [Range(1, 8)]
-    public string PropertyAge { get; set; }
+    public int? PropertyAge { get; set; }
     [Range(1, 5)]
-    public string FloorArea { get; set; }
+    public int? FloorArea { get; set; }
     [Range(1, 3)]
-    public string HouseholdSize { get; set; }
+    public int? HouseholdSize { get; set; }
     [Range(1, 5)]
-    public string NumberOfAdults { get; set; }
+    public int? NumberOfAdults { get; set; }
     [Range(1, 5)]
-    public string NumberOfBedrooms { get; set; }
+    public int? NumberOfBedrooms { get; set; }
 }
