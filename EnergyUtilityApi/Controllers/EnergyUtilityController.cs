@@ -12,8 +12,8 @@ public class EnergyUtilityController : EnergyUtilityBaseController
     {
         try
         {
-            //decimal result = await _service.GetElectricityConsumption(request);
-            return Ok(request);
+            decimal result = await _service.GetElectricityConsumption(request);
+            return Ok(result);
         }
         catch (Exception)
         {
