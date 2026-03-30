@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using EnergyUtilityApi;
 using System.Reflection;
+
 public class EnergyUtilityService
 {
     readonly EnergyUtilityDbContext _context;
@@ -17,11 +18,6 @@ public class EnergyUtilityService
         int regionId = await GetNeedRegionId(req.Postcode);
         Dictionary<string, decimal?> multiplierDictionary = await GetHouseholdFeatureMultipliers(regionId);
 
-        var keys = multiplierDictionary.Keys;
-        foreach (var key in keys)
-        {
-            Console.WriteLine(key);
-        }
         // Get the type of the object
         Type type = req.GetType();
 
@@ -46,28 +42,57 @@ public class EnergyUtilityService
                     result *= 1;
                 }
             }
-
         }
         return result;
     }
 
+
     private async Task<decimal?> GetMedianElectricityCosumption(string postcode)
     {
-        return await _context.ElecConsPostcodes
-        .Where(x => x.Postcode == postcode)
+        decimal? result = await _context.ElecConsPostcodes
+        .Where(x => x.Postcode.Replace(" ", "") == postcode)
         .Select(x => x.MedianCons)
         .SingleOrDefaultAsync();
+
+        if (result == null)
+        {
+            // get the first three characters from the postcode
+            string shortPostcode = postcode.Replace(" ", "")[..3];
+            result = await _context.ElecConsPostcodes
+            .Where(x => x.Postcode == shortPostcode)
+            .Select(x => x.MedianCons)
+            .FirstOrDefaultAsync();
+
+            Console.WriteLine($"No match in DB for {postcode} using {shortPostcode}");
+        }
+        return result;
     }
 
     private async Task<int> GetNeedRegionId(string postcode)
     {
-        return await _context.AllPostcodeDnos
-        .Where(d => d.Postcode == postcode)
+        int result = await _context.AllPostcodeDnos
+        .Where(d => d.Postcode.Replace(" ", "") == postcode)
         .Join(_context.DnoNeedRegions,
         d => d.DnoId,
         dnr => dnr.DnoId,
         (d, dnr) => dnr.NeedRegionSourceId)
         .SingleOrDefaultAsync();
+
+        if (result == 0)
+        {
+            // get the first three characters from the postcode
+            string shortPostcode = postcode.Replace(" ", "")[..3];
+            result = await _context.AllPostcodeDnos
+            .Where(d => d.Postcode.StartsWith(shortPostcode))
+            .Join(_context.DnoNeedRegions,
+            d => d.DnoId,
+            dnr => dnr.DnoId,
+            (d, dnr) => dnr.NeedRegionSourceId)
+            .FirstOrDefaultAsync();
+
+            Console.WriteLine($"No match in DB for {postcode} using {shortPostcode}");
+        }
+        return result;
     }
 
     private async Task<Dictionary<string, decimal?>> GetHouseholdFeatureMultipliers(int regionId)

@@ -8,7 +8,7 @@ public record GetConsumptionRequest
     public string Postcode { get; set; }
     [Range(1, 7)]
     public int? PropertyType { get; set; }
-    [Range(1, 8)]
+    [Range(1, 12)]
     public int? PropertyAge { get; set; }
     [Range(1, 5)]
     public int? FloorArea { get; set; }
