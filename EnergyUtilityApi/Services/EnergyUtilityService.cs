@@ -2,8 +2,6 @@ using Microsoft.EntityFrameworkCore;
 using EnergyUtilityApi;
 using System.Reflection;
 using System.Text.RegularExpressions;
-using System.Globalization;
-using System.Numerics;
 
 public class EnergyUtilityService
 {
@@ -16,9 +14,10 @@ public class EnergyUtilityService
     {
         ElectricityConsumptionStatistics postcodeStats = await GetElectricityConsumptionStatistics(postcode);
         DNORegionData regionData = await GetDNORegionData(postcode);
+
         return new PostcodeData
         {
-            postcode = postcode,
+            Postcode = postcodeStats.Postcode,
             MeanCons = postcodeStats.MeanCons,
             MedianCons = postcodeStats.MedianCons,
             RegionCode = regionData.RegionCode,
@@ -35,7 +34,6 @@ public class EnergyUtilityService
         dno => dno.Id,
         (a, dno) => new DNORegionData
         {
-            Postcode = postcode,
             RegionCode = dno.RegionCode,
             Region = dno.Region,
             Operator = dno.Operator
@@ -52,12 +50,12 @@ public class EnergyUtilityService
             dno => dno.Id,
             (a, dno) => new DNORegionData
             {
-                Postcode = shortPostcode,
                 RegionCode = dno.RegionCode,
                 Region = dno.Region,
                 Operator = dno.Operator
             })
             .FirstOrDefaultAsync();
+            Console.WriteLine($"No match in DB for {postcode} using {shortPostcode}");
         }
         return result;
     }
@@ -99,16 +97,26 @@ public class EnergyUtilityService
     {
         ElectricityConsumptionStatistics result = await _context.ElecConsPostcodes
         .Where(x => x.Postcode.Replace(" ", "") == postcode)
-        .Select(x => new ElectricityConsumptionStatistics { MeanCons = x.MeanCons, MedianCons = x.MedianCons })
+        .Select(x => new ElectricityConsumptionStatistics
+        {
+            Postcode = x.Postcode,
+            MeanCons = x.MeanCons,
+            MedianCons = x.MedianCons
+        })
         .SingleOrDefaultAsync();
 
         if (result == null)
         {
             // get the first three characters from the postcode
-            string shortPostcode = postcode.Replace(" ", "")[..3];
+            string shortPostcode = Regex.Replace(postcode, "[^0-9a-zA-Z]+", "")[..3];
             result = await _context.ElecConsPostcodes
-            .Where(x => x.Postcode == shortPostcode)
-            .Select(x => new ElectricityConsumptionStatistics { MedianCons = x.MedianCons, MeanCons = x.MeanCons })
+            .Where(x => x.Postcode.Replace(" ", "").StartsWith(shortPostcode))
+            .Select(x => new ElectricityConsumptionStatistics
+            {
+                Postcode = x.Postcode,
+                MedianCons = x.MedianCons,
+                MeanCons = x.MeanCons
+            })
             .FirstOrDefaultAsync();
 
             Console.WriteLine($"No match in DB for {postcode} using {shortPostcode}");
