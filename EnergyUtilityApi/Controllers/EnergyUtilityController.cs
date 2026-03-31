@@ -27,8 +27,12 @@ public class EnergyUtilityController : EnergyUtilityBaseController
     {
         try
         {
-            var result = await _service.GetPostcodeData(postcodes[0]);
-            return Ok(result);
+            PostcodeData[] results = new PostcodeData[postcodes.Length];
+            for (int i = 0; i < postcodes.Length; i++)
+            {
+                results[i] = await _service.GetPostcodeData(postcodes[i]);
+            }
+            return Ok(results);
         }
         catch (Exception)
         {
@@ -39,7 +43,7 @@ public class EnergyUtilityController : EnergyUtilityBaseController
     [HttpGet("cost/")]
     public async Task<IActionResult> GetEnergyCost()
     {
-
+        return Ok();
     }
 
 }
