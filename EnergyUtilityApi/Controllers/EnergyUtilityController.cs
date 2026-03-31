@@ -7,7 +7,7 @@ public class EnergyUtilityController : EnergyUtilityBaseController
         _service = service;
     }
 
-    [HttpGet]
+    [HttpGet("consumption/")]
     public async Task<IActionResult> GetEnergyConsumption([FromQuery] GetConsumptionRequest request)
     {
         try
@@ -22,25 +22,24 @@ public class EnergyUtilityController : EnergyUtilityBaseController
     }
 
     // get data for postcodes: region, dno, median and mean elec consumption
-    // [HttpGet]
-    // public async Task<IActionResult> GetDataByPostcode([FromQuery] string postcode)
-    // {
-    //     try
-    //     {
-    //         // var result = await _service.GetMedianElectricityCosumption(postcode);
-    //         var result = await _service.GetNeedRegionId(postcode);
-    //         return Ok(result);
-    //     }
-    //     catch (Exception)
-    //     {
-    //         return StatusCode(500, "An error occured while retrieving recipes");
-    //     }
-    // }
-    // [HttpGet]
-    // public IActionResult GetDataByPostcodes([FromQuery(Name = "postcode")] string[] postcodes)
-    // {
-    //     return Ok();
-    // }
+    [HttpGet]
+    public async Task<IActionResult> GetDataByPostcodes([FromQuery(Name = "postcode")] string[] postcodes)
+    {
+        try
+        {
+            var result = await _service.GetPostcodeData(postcodes[0]);
+            return Ok(result);
+        }
+        catch (Exception)
+        {
+            return StatusCode(500, "An error occured while retrieving recipes");
+        }
+    }
 
+    [HttpGet("cost/")]
+    public async Task<IActionResult> GetEnergyCost()
+    {
+
+    }
 
 }

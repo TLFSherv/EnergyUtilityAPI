@@ -6,15 +6,40 @@ public class EnergyUtilityService
 {
     readonly EnergyUtilityDbContext _context;
     public record HouseholdFeatureMultipliers(string CategoryName, int? ValueId, decimal? Multiplier);
+    public record ElectricityConsumptionStatistics(decimal? MeanCons, decimal? MedianCons);
+    public record PostcodeData(decimal? MeanCons, decimal? MedianCons, char? RegionCode, string? Region, string? Operator);
+    public record DNORegionData(char? RegionCode, string? Region, string? Operator);
     public EnergyUtilityService(EnergyUtilityDbContext context)
     {
         _context = context;
     }
 
+    public async Task<PostcodeData> GetPostcodeData(string postcode)
+    {
+        ElectricityConsumptionStatistics postcodeStats = await GetElectricityConsumptionStatistics(postcode);
+        int regionId = await GetNeedRegionId(postcode);
+        DNORegionData regionData = await GetDNORegionData(regionId);
+        Console.WriteLine(regionId);
+        return new PostcodeData(
+            postcodeStats.MeanCons,
+            postcodeStats.MedianCons,
+            regionData.RegionCode,
+            regionData.Region,
+            regionData.Operator
+        );
+    }
+
+    public async Task<DNORegionData> GetDNORegionData(string postcode)
+    {
+        return await _context.DnoNeedRegions
+        .Where(x => x.NeedRegionSourceId == regionId)
+        .Select(x => new DNORegionData(x.RegionCode, x.Region, x.Operator))
+        .SingleOrDefaultAsync();
+    }
     public async Task<decimal> GetElectricityConsumption(GetConsumptionRequest req)
     {
-        decimal? medianCons = await GetMedianElectricityCosumption(req.Postcode);
-        decimal result = medianCons ?? 2700;
+        ElectricityConsumptionStatistics postcodeStats = await GetElectricityConsumptionStatistics(req.Postcode);
+        decimal result = postcodeStats.MedianCons ?? 2700;
         int regionId = await GetNeedRegionId(req.Postcode);
         Dictionary<string, decimal?> multiplierDictionary = await GetHouseholdFeatureMultipliers(regionId);
 
@@ -46,12 +71,11 @@ public class EnergyUtilityService
         return result;
     }
 
-
-    private async Task<decimal?> GetMedianElectricityCosumption(string postcode)
+    private async Task<ElectricityConsumptionStatistics> GetElectricityConsumptionStatistics(string postcode)
     {
-        decimal? result = await _context.ElecConsPostcodes
+        ElectricityConsumptionStatistics result = await _context.ElecConsPostcodes
         .Where(x => x.Postcode.Replace(" ", "") == postcode)
-        .Select(x => x.MedianCons)
+        .Select(x => new ElectricityConsumptionStatistics(x.MeanCons, x.MedianCons))
         .SingleOrDefaultAsync();
 
         if (result == null)
@@ -60,7 +84,7 @@ public class EnergyUtilityService
             string shortPostcode = postcode.Replace(" ", "")[..3];
             result = await _context.ElecConsPostcodes
             .Where(x => x.Postcode == shortPostcode)
-            .Select(x => x.MedianCons)
+            .Select(x => new ElectricityConsumptionStatistics(x.MedianCons, x.MeanCons))
             .FirstOrDefaultAsync();
 
             Console.WriteLine($"No match in DB for {postcode} using {shortPostcode}");
@@ -92,6 +116,7 @@ public class EnergyUtilityService
 
             Console.WriteLine($"No match in DB for {postcode} using {shortPostcode}");
         }
+        Console.WriteLine(result);
         return result;
     }
 
