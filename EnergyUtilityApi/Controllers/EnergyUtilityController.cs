@@ -13,6 +13,10 @@ public class EnergyUtilityController : EnergyUtilityBaseController
         try
         {
             SendEnergyCostData result = await _service.GetEnergyCost(request);
+            if (result == null)
+            {
+                return NotFound();
+            }
             return Ok(result);
         }
         catch (Exception)
