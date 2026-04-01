@@ -6,7 +6,7 @@ public class EnergyUtilityController : EnergyUtilityBaseController
     {
         _service = service;
     }
-
+    // get yearly energy consumption and cost data
     [HttpGet("cost/")]
     public async Task<IActionResult> GetEnergyCost([FromQuery] GetEnergyCostRequest request)
     {
@@ -21,7 +21,7 @@ public class EnergyUtilityController : EnergyUtilityBaseController
         }
     }
 
-    // get data for postcodes: region, dno, median and mean elec consumption
+    // get energy data for postcodes: region, dno, median and mean elec consumption
     [HttpGet]
     public async Task<IActionResult> GetDataByPostcodes([FromQuery(Name = "postcode")] string[] postcodes)
     {
@@ -30,7 +30,7 @@ public class EnergyUtilityController : EnergyUtilityBaseController
             SendPostcodeData[] results = new SendPostcodeData[postcodes.Length];
             for (int i = 0; i < postcodes.Length; i++)
             {
-                results[i] = await _service.GetPostcodeDataResult(postcodes[i]);
+                results[i] = await _service.GetEnergyDataByPostcode(postcodes[i]);
             }
             return Ok(results);
         }

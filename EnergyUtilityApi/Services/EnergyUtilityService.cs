@@ -52,8 +52,41 @@ public class EnergyUtilityService
             EnergyCost = energyCost
         };
     }
+    public async Task<decimal> GetEnergyConsumption(GetEnergyConsumptionRequest req)
+    {
+        SendPostcodeData postcodeStats = await GetPostcodeEnergyConsumption(req.Postcode);
+        decimal result = postcodeStats.MedianCons ?? 2700;
+        int regionId = await GetNeedRegionId(req.Postcode);
+        Dictionary<string, decimal?> multiplierDictionary = await GetHouseholdFeatureMultipliers(regionId);
 
-    public async Task<SendPostcodeData> GetPostcodeDataResult(string postcode)
+        // Get the type of the object
+        Type type = req.GetType();
+
+        // Get all public properties of the object's type
+        PropertyInfo[] properties = type.GetProperties();
+        foreach (PropertyInfo property in properties)
+        {
+            // get the name and value of each property
+            string name = property.Name;
+            object value = property.GetValue(req);
+            if (value != null)
+            {
+                string key = $"{name}-{value}";
+                if (multiplierDictionary.TryGetValue(key, out decimal? foundMultiplier))
+                {
+                    decimal m = foundMultiplier ?? 1;
+                    result *= m;
+                }
+                else
+                {
+                    Console.WriteLine($"No match in DB for {key} (using 1.0)");
+                    result *= 1;
+                }
+            }
+        }
+        return result;
+    }
+    public async Task<SendPostcodeData> GetEnergyDataByPostcode(string postcode)
     {
         SendPostcodeData energyConsumption = await GetPostcodeEnergyConsumption(postcode);
         SendPostcodeData regionData = await GetDNORegionData(postcode);
@@ -101,40 +134,6 @@ public class EnergyUtilityService
             })
             .FirstOrDefaultAsync();
             Console.WriteLine($"No match in DB for {postcode} using {shortPostcode}");
-        }
-        return result;
-    }
-    public async Task<decimal> GetEnergyConsumption(GetEnergyConsumptionRequest req)
-    {
-        SendPostcodeData postcodeStats = await GetPostcodeEnergyConsumption(req.Postcode);
-        decimal result = postcodeStats.MedianCons ?? 2700;
-        int regionId = await GetNeedRegionId(req.Postcode);
-        Dictionary<string, decimal?> multiplierDictionary = await GetHouseholdFeatureMultipliers(regionId);
-
-        // Get the type of the object
-        Type type = req.GetType();
-
-        // Get all public properties of the object's type
-        PropertyInfo[] properties = type.GetProperties();
-        foreach (PropertyInfo property in properties)
-        {
-            // get the name and value of each property
-            string name = property.Name;
-            object value = property.GetValue(req);
-            if (value != null)
-            {
-                string key = $"{name}-{value}";
-                if (multiplierDictionary.TryGetValue(key, out decimal? foundMultiplier))
-                {
-                    decimal m = foundMultiplier ?? 1;
-                    result *= m;
-                }
-                else
-                {
-                    Console.WriteLine($"No match in DB for {key} (using 1.0)");
-                    result *= 1;
-                }
-            }
         }
         return result;
     }
