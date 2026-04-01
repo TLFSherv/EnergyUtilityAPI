@@ -7,12 +7,12 @@ public class EnergyUtilityController : EnergyUtilityBaseController
         _service = service;
     }
 
-    [HttpGet("consumption/")]
-    public async Task<IActionResult> GetEnergyConsumption([FromQuery] GetConsumptionRequest request)
+    [HttpGet("cost/")]
+    public async Task<IActionResult> GetEnergyCost([FromQuery] GetEnergyCostRequest request)
     {
         try
         {
-            decimal result = await _service.GetElectricityConsumption(request);
+            SendEnergyCostData result = await _service.GetEnergyCost(request);
             return Ok(result);
         }
         catch (Exception)
@@ -27,10 +27,10 @@ public class EnergyUtilityController : EnergyUtilityBaseController
     {
         try
         {
-            PostcodeData[] results = new PostcodeData[postcodes.Length];
+            SendPostcodeData[] results = new SendPostcodeData[postcodes.Length];
             for (int i = 0; i < postcodes.Length; i++)
             {
-                results[i] = await _service.GetPostcodeData(postcodes[i]);
+                results[i] = await _service.GetPostcodeDataResult(postcodes[i]);
             }
             return Ok(results);
         }
@@ -38,12 +38,6 @@ public class EnergyUtilityController : EnergyUtilityBaseController
         {
             return StatusCode(500, "An error occured while retrieving recipes");
         }
-    }
-
-    [HttpGet("cost/")]
-    public async Task<IActionResult> GetEnergyCost()
-    {
-        return Ok();
     }
 
 }

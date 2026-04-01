@@ -1,4 +1,4 @@
-public record PostcodeData
+public record SendPostcodeData
 {
     public required string Postcode { get; set; }
     public decimal? MeanCons { get; set; }

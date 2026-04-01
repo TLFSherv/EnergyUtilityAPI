@@ -1,11 +1,15 @@
 using System.ComponentModel.DataAnnotations;
 
-public record GetConsumptionRequest
+public record GetEnergyCostRequest
 {
     [Required]
     [StringLength(8)]
     [MinLength(6)]
     public string Postcode { get; set; }
+    [Range(1, 3)]
+    public int? PaymentMethodId { get; set; }
+    [Range(1, 2)]
+    public int? MeterTypeId { get; set; }
     [Range(1, 7)]
     public int? PropertyType { get; set; }
     [Range(1, 12)]
@@ -18,4 +22,5 @@ public record GetConsumptionRequest
     public int? NumberOfAdults { get; set; }
     [Range(1, 5)]
     public int? NumberOfBedrooms { get; set; }
+
 }

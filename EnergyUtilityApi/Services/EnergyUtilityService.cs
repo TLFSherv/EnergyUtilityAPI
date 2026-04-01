@@ -10,30 +10,74 @@ public class EnergyUtilityService
     {
         _context = context;
     }
-    public async Task<PostcodeData> GetPostcodeData(string postcode)
+    public async Task<SendEnergyCostData> GetEnergyCost(GetEnergyCostRequest req)
     {
-        ElectricityConsumptionStatistics postcodeStats = await GetElectricityConsumptionStatistics(postcode);
-        DNORegionData regionData = await GetDNORegionData(postcode);
-
-        return new PostcodeData
+        GetEnergyConsumptionRequest energyConsumptionRequest = new GetEnergyConsumptionRequest
         {
-            Postcode = postcodeStats.Postcode,
-            MeanCons = postcodeStats.MeanCons,
-            MedianCons = postcodeStats.MedianCons,
+            Postcode = req.Postcode,
+            PropertyType = req.PropertyType,
+            PropertyAge = req.PropertyAge,
+            FloorArea = req.FloorArea,
+            HouseholdSize = req.HouseholdSize,
+            NumberOfAdults = req.NumberOfAdults,
+            NumberOfBedrooms = req.NumberOfBedrooms
+        };
+        decimal energyConsumption = await GetEnergyConsumption(energyConsumptionRequest);
+        decimal? energyCost = null;
+        // calculate the energy cost
+        if (req.PaymentMethodId != null && req.MeterTypeId != null)
+        {
+            var result = await _context.AllPostcodeDnos
+            .Where(a => a.Postcode.Replace(" ", "") == req.Postcode)
+            .Join(_context.DnoPriceCapRates,
+            a => a.DnoId,
+            d => d.DnoId,
+            (a, d) => new
+            {
+                AnnualStandingCharge = d.AnnualStandingCharge,
+                UnitRatePence = d.UnitRatePence,
+                PaymentMethodId = d.PaymentMethodId,
+                MeterTypeId = d.MeterTypeId
+            })
+            .Where(x => x.PaymentMethodId == req.PaymentMethodId
+            && x.MeterTypeId == req.MeterTypeId)
+            .SingleOrDefaultAsync();
+            // use consumption and db values to calculate the cost
+            energyCost = energyConsumption * result.UnitRatePence + 365 * result.AnnualStandingCharge;
+        }
+
+        return new SendEnergyCostData
+        {
+            EnergyConsumption = energyConsumption,
+            EnergyCost = energyCost
+        };
+    }
+
+    public async Task<SendPostcodeData> GetPostcodeDataResult(string postcode)
+    {
+        SendPostcodeData energyConsumption = await GetPostcodeEnergyConsumption(postcode);
+        SendPostcodeData regionData = await GetDNORegionData(postcode);
+
+        return new SendPostcodeData
+        {
+            Postcode = energyConsumption.Postcode,
+            MeanCons = energyConsumption.MeanCons,
+            MedianCons = energyConsumption.MedianCons,
             RegionCode = regionData.RegionCode,
             Region = regionData.Region,
             Operator = regionData.Operator
         };
     }
-    public async Task<DNORegionData> GetDNORegionData(string postcode)
+    public async Task<SendPostcodeData> GetDNORegionData(string postcode)
     {
-        DNORegionData result = await _context.AllPostcodeDnos
+        SendPostcodeData result = await _context.AllPostcodeDnos
         .Where(a => a.Postcode.Replace(" ", "") == postcode)
         .Join(_context.Dnos,
         a => a.DnoId,
         dno => dno.Id,
-        (a, dno) => new DNORegionData
+        (a, dno) => new SendPostcodeData
         {
+            Postcode = postcode,
             RegionCode = dno.RegionCode,
             Region = dno.Region,
             Operator = dno.Operator
@@ -48,8 +92,9 @@ public class EnergyUtilityService
             .Join(_context.Dnos,
             a => a.DnoId,
             dno => dno.Id,
-            (a, dno) => new DNORegionData
+            (a, dno) => new SendPostcodeData
             {
+                Postcode = shortPostcode,
                 RegionCode = dno.RegionCode,
                 Region = dno.Region,
                 Operator = dno.Operator
@@ -59,9 +104,9 @@ public class EnergyUtilityService
         }
         return result;
     }
-    public async Task<decimal> GetElectricityConsumption(GetConsumptionRequest req)
+    public async Task<decimal> GetEnergyConsumption(GetEnergyConsumptionRequest req)
     {
-        ElectricityConsumptionStatistics postcodeStats = await GetElectricityConsumptionStatistics(req.Postcode);
+        SendPostcodeData postcodeStats = await GetPostcodeEnergyConsumption(req.Postcode);
         decimal result = postcodeStats.MedianCons ?? 2700;
         int regionId = await GetNeedRegionId(req.Postcode);
         Dictionary<string, decimal?> multiplierDictionary = await GetHouseholdFeatureMultipliers(regionId);
@@ -93,11 +138,11 @@ public class EnergyUtilityService
         }
         return result;
     }
-    private async Task<ElectricityConsumptionStatistics> GetElectricityConsumptionStatistics(string postcode)
+    private async Task<SendPostcodeData> GetPostcodeEnergyConsumption(string postcode)
     {
-        ElectricityConsumptionStatistics result = await _context.ElecConsPostcodes
+        SendPostcodeData result = await _context.ElecConsPostcodes
         .Where(x => x.Postcode.Replace(" ", "") == postcode)
-        .Select(x => new ElectricityConsumptionStatistics
+        .Select(x => new SendPostcodeData
         {
             Postcode = x.Postcode,
             MeanCons = x.MeanCons,
@@ -110,8 +155,8 @@ public class EnergyUtilityService
             // get the first three characters from the postcode
             string shortPostcode = Regex.Replace(postcode, "[^0-9a-zA-Z]+", "")[..3];
             result = await _context.ElecConsPostcodes
-            .Where(x => x.Postcode.Replace(" ", "").StartsWith(shortPostcode))
-            .Select(x => new ElectricityConsumptionStatistics
+            .Where(x => x.Postcode.Replace(" ", "") == shortPostcode)
+            .Select(x => new SendPostcodeData
             {
                 Postcode = x.Postcode,
                 MedianCons = x.MedianCons,
@@ -136,7 +181,7 @@ public class EnergyUtilityService
         if (result == 0)
         {
             // get the first three characters from the postcode
-            string shortPostcode = postcode.Replace(" ", "")[..3];
+            string shortPostcode = Regex.Replace(postcode, "[^0-9a-zA-Z]+", "")[..3];
             result = await _context.AllPostcodeDnos
             .Where(d => d.Postcode.StartsWith(shortPostcode))
             .Join(_context.DnoNeedRegions,
@@ -147,13 +192,12 @@ public class EnergyUtilityService
 
             Console.WriteLine($"No match in DB for {postcode} using {shortPostcode}");
         }
-        Console.WriteLine(result);
         return result;
     }
     private async Task<Dictionary<string, decimal?>> GetHouseholdFeatureMultipliers(int regionId)
     {
         return await _context.RegionalWeights
-        .Where(rw => rw.RegionId == regionId)
+        .Where(rw => rw.RegionId == regionId || (regionId != 12 && rw.RegionId == null))
         .Join(_context.WeightCategories,
         rw => rw.CategoryId,
         wc => wc.Id,

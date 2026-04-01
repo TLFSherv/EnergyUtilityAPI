@@ -9,7 +9,11 @@ public partial class DnoPriceCapRate
 
     public string? PaymentMethod { get; set; }
 
+    public int? PaymentMethodId { get; set; }
+
     public string? MeterType { get; set; }
+
+    public int? MeterTypeId { get; set; }
 
     public decimal? AnnualStandingCharge { get; set; }
 

@@ -94,9 +94,11 @@ public partial class EnergyUtilityDbContext : DbContext
                 .HasPrecision(5, 4)
                 .HasColumnName("annual_standing_charge");
             entity.Property(e => e.DnoId).HasColumnName("dno_id");
+            entity.Property(e => e.MeterTypeId).HasColumnName("meter_type_id");
             entity.Property(e => e.MeterType)
                 .HasMaxLength(20)
                 .HasColumnName("meter_type");
+            entity.Property(e => e.PaymentMethodId).HasColumnName("payment_method_id");
             entity.Property(e => e.PaymentMethod)
                 .HasMaxLength(20)
                 .HasColumnName("payment_method");
