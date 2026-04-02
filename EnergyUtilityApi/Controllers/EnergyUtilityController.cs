@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
+using FluentValidation;
 public class EnergyUtilityController : EnergyUtilityBaseController
 {
     private readonly EnergyUtilityService _service;
@@ -8,10 +9,16 @@ public class EnergyUtilityController : EnergyUtilityBaseController
     }
     // get yearly energy consumption and cost data
     [HttpGet("cost/")]
-    public async Task<IActionResult> GetEnergyCost([FromQuery] GetEnergyCostRequest request)
+    public async Task<IActionResult> GetEnergyCost([FromQuery] GetEnergyCostRequest request, IValidator<GetEnergyCostRequest> validator)
     {
         try
         {
+            var validationResults = await validator.ValidateAsync(request);
+            if (!validationResults.IsValid)
+            {
+                return ValidationProblem(validationResults.ToModelStateDictionary());
+            }
+
             SendEnergyCostData result = await _service.GetEnergyCost(request);
             if (result == null)
             {

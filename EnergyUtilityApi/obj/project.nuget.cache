@@ -1,9 +1,11 @@
 {
   "version": 2,
-  "dgSpecHash": "XzZUGkjpd24=",
+  "dgSpecHash": "6/EORs7xrNA=",
   "success": true,
   "projectFilePath": "/Users/sherwinburgess/Documents/EnergyUtilityApi/EnergyUtilityApi/EnergyUtilityApi.csproj",
   "expectedPackageFiles": [
+    "/Users/sherwinburgess/.nuget/packages/fluentvalidation/12.1.1/fluentvalidation.12.1.1.nupkg.sha512",
+    "/Users/sherwinburgess/.nuget/packages/fluentvalidation.dependencyinjectionextensions/12.1.1/fluentvalidation.dependencyinjectionextensions.12.1.1.nupkg.sha512",
     "/Users/sherwinburgess/.nuget/packages/humanizer.core/2.14.1/humanizer.core.2.14.1.nupkg.sha512",
     "/Users/sherwinburgess/.nuget/packages/microsoft.build.framework/18.0.2/microsoft.build.framework.18.0.2.nupkg.sha512",
     "/Users/sherwinburgess/.nuget/packages/microsoft.codeanalysis.analyzers/3.11.0/microsoft.codeanalysis.analyzers.3.11.0.nupkg.sha512",

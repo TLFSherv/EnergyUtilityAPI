@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using EnergyUtilityApi;
+using FluentValidation;
 
 WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
 var connString = builder.Configuration.GetConnectionString("DbConnection");
@@ -13,6 +14,8 @@ builder.Services.AddProblemDetails();
 builder.Services.AddControllers();
 // register custom service
 builder.Services.AddScoped<EnergyUtilityService>();
+// register validator
+builder.Services.AddValidatorsFromAssemblyContaining<Program>();
 
 WebApplication app = builder.Build();
 

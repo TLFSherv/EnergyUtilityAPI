@@ -118,3 +118,5 @@
 /Users/sherwinburgess/Documents/EnergyUtilityApi/EnergyUtilityApi/obj/Debug/net10.0/EnergyUtilityApi.pdb
 /Users/sherwinburgess/Documents/EnergyUtilityApi/EnergyUtilityApi/obj/Debug/net10.0/EnergyUtilityApi.genruntimeconfig.cache
 /Users/sherwinburgess/Documents/EnergyUtilityApi/EnergyUtilityApi/obj/Debug/net10.0/ref/EnergyUtilityApi.dll
+/Users/sherwinburgess/Documents/EnergyUtilityApi/EnergyUtilityApi/bin/Debug/net10.0/FluentValidation.dll
+/Users/sherwinburgess/Documents/EnergyUtilityApi/EnergyUtilityApi/bin/Debug/net10.0/FluentValidation.DependencyInjectionExtensions.dll
