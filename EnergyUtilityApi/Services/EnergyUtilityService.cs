@@ -2,17 +2,18 @@ using Microsoft.EntityFrameworkCore;
 using EnergyUtilityApi;
 using System.Reflection;
 using System.Text.RegularExpressions;
-using System.IO.Pipelines;
+using Microsoft.Extensions.Options;
 
 public class EnergyUtilityService
 {
-    private int ScotlandRegionId { get; } = 12;
+    private int _regionIdScotland { get; }
     private readonly EnergyUtilityDbContext _context;
     private readonly ILogger<EnergyUtilityService> _logger;
-    public EnergyUtilityService(EnergyUtilityDbContext context, ILogger<EnergyUtilityService> logger)
+    public EnergyUtilityService(EnergyUtilityDbContext context, ILogger<EnergyUtilityService> logger, IOptions<EnergyUtilityServiceSettings> options)
     {
         _context = context;
         _logger = logger;
+        _regionIdScotland = options.Value.ScotlandRegionId;
     }
     public async Task<SendEnergyCostData> GetEnergyCost(GetEnergyCostRequest req)
     {
@@ -73,8 +74,8 @@ public class EnergyUtilityService
     {
         try
         {
-            SendPostcodeData postcodeStats = await GetEnergyConsumptionByPostcode(req.Postcode);
-            decimal energyConsumption = postcodeStats.MedianCons ?? 2700;
+            SendPostcodeData postcodeConsumption = await GetEnergyConsumptionByPostcode(req.Postcode);
+            decimal energyConsumption = postcodeConsumption.MedianCons ?? 2700;
             int regionId = await GetNeedRegionId(req.Postcode);
             Dictionary<string, decimal?> multiplierDictionary = await GetHouseholdFeatureMultipliers(regionId);
 
@@ -89,7 +90,7 @@ public class EnergyUtilityService
                 // get the name and value of each property
                 string name = property.Name;
                 object value = property.GetValue(req);
-                if (value != null)
+                if (value != null || name != "Postcode")
                 {
                     string key = $"{name}-{value}";
                     if (multiplierDictionary.TryGetValue(key, out decimal? foundMultiplier))
@@ -157,7 +158,7 @@ public class EnergyUtilityService
 
             if (result == null)
             {
-                string shortPostcode = Regex.Replace(postcode, "[^0-9a-zA-Z]+", "")[..3];
+                string shortPostcode = Regex.Replace(postcode, "[^0-9a-zA-Z]+", "")[..4];
                 _logger.LogWarning("No match in DB for {Postcode} using {shortPostcode}", postcode, shortPostcode);
                 result = await _context.AllPostcodeDnos
                 .Where(a => a.Postcode.Replace(" ", "").StartsWith(shortPostcode))
@@ -172,6 +173,7 @@ public class EnergyUtilityService
                     Operator = dno.Operator
                 })
                 .FirstOrDefaultAsync();
+
                 _logger.LogInformation("Successfully fetched DNO region data for postcode: {Postcode}", shortPostcode);
             }
             else _logger.LogInformation("Successfully fetched DNO region data for postcode: {Postcode}", postcode);
@@ -203,7 +205,7 @@ public class EnergyUtilityService
             if (result == null)
             {
                 // get the first three characters from the postcode
-                string shortPostcode = Regex.Replace(postcode, "[^0-9a-zA-Z]+", "")[..3];
+                string shortPostcode = Regex.Replace(postcode, "[^0-9a-zA-Z]+", "")[..4];
                 _logger.LogWarning("No match in DB for {Postcode} using {ShortPostcode}", postcode, shortPostcode);
                 result = await _context.ElecConsPostcodes
                 .Where(x => x.Postcode.Replace(" ", "") == shortPostcode)
@@ -232,7 +234,7 @@ public class EnergyUtilityService
         try
         {
             _logger.LogDebug("Checking if postcode: {Postcode} exists in DB", postcode);
-            string shortPostcode = Regex.Replace(postcode, "[^0-9a-zA-Z]+", "")[..3];
+            string shortPostcode = Regex.Replace(postcode, "[^0-9a-zA-Z]+", "")[..4];
             string? result = await _context.ElecConsPostcodes
                 .Where(x => x.Postcode.Replace(" ", "") == shortPostcode)
                 .Select(x => x.Postcode)
@@ -262,7 +264,7 @@ public class EnergyUtilityService
     //         (d, dnr) => dnr.NeedRegionSourceId)
     //         .FirstOrDefaultAsync();
 
-    //         return needRegionId == ScotlandRegionId; // the need region source id for Scotland is 12
+    //         return needRegionId == _regionIdScotland; // the need region source id for Scotland is 12
     //     }
     //     catch (Exception ex)
     //     {
@@ -286,7 +288,7 @@ public class EnergyUtilityService
             if (result == 0)
             {
                 // get the first three characters from the postcode
-                string shortPostcode = Regex.Replace(postcode, "[^0-9a-zA-Z]+", "")[..3];
+                string shortPostcode = Regex.Replace(postcode, "[^0-9a-zA-Z]+", "")[..4];
                 _logger.LogWarning("No match in DB for {Postcode} using {shortPostcode}", postcode, shortPostcode);
                 result = await _context.AllPostcodeDnos
                 .Where(d => d.Postcode.StartsWith(shortPostcode))
@@ -313,7 +315,7 @@ public class EnergyUtilityService
         {
             _logger.LogDebug("Fetching household feature weights for regionId: {RegionId}", regionId);
             var result = await _context.RegionalWeights
-            .Where(rw => rw.RegionId == regionId || (regionId != ScotlandRegionId && rw.RegionId == null))
+            .Where(rw => rw.RegionId == regionId || (regionId != _regionIdScotland && rw.RegionId == null))
             .Join(_context.WeightCategories,
             rw => rw.CategoryId,
             wc => wc.Id,

@@ -17,6 +17,10 @@ builder.Services.AddScoped<EnergyUtilityService>();
 // register validator
 builder.Services.AddValidatorsFromAssemblyContaining<Program>();
 
+builder.Services.Configure<EnergyUtilityServiceSettings>(
+    builder.Configuration.GetSection("EnergyUtilityServiceSettings")
+);
+
 WebApplication app = builder.Build();
 
 if (!app.Environment.IsDevelopment())
