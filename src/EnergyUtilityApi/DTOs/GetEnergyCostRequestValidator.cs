@@ -8,9 +8,10 @@ public class GetEnergyCostRequestValidator : AbstractValidator<GetEnergyCostRequ
     {
         _service = service;
 
-        RuleFor(x => x.Postcode).NotEmpty()
+        RuleFor(x => x.Postcode).NotNull().NotEmpty()
         .WithMessage("Postcode is required")
-        .Length(6, 8).MustAsync(BeAValidPostcode)
+        .Length(6, 8).WithMessage("Postcode have a length between 6 and 8 character")
+        .MustAsync(BeAValidPostcode)
         .WithMessage("Invalid postcode");
 
         RuleFor(x => x.PaymentMethodId).InclusiveBetween(1, 3)
@@ -47,8 +48,16 @@ public class GetEnergyCostRequestValidator : AbstractValidator<GetEnergyCostRequ
 
     private async Task<bool> BeAValidPostcode(string postcode, CancellationToken token)
     {
-        IsValidPostcode = await _service.PostcodeExists(postcode);
-        return IsValidPostcode;
+        try
+        {
+            if (postcode == null) return IsValidPostcode = false;
+            IsValidPostcode = await _service.PostcodeExists(postcode);
+            return IsValidPostcode;
+        }
+        catch (Exception)
+        {
+            return false;
+        }
     }
     // private async Task<bool> BeAScotlandPostcode(string postcode)
     // {

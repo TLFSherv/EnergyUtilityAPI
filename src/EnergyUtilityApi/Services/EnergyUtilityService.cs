@@ -90,7 +90,8 @@ public class EnergyUtilityService
                 // get the name and value of each property
                 string name = property.Name;
                 object value = property.GetValue(req);
-                if (value != null || name != "Postcode")
+
+                if (value is int val && val != 0)
                 {
                     string key = $"{name}-{value}";
                     if (multiplierDictionary.TryGetValue(key, out decimal? foundMultiplier))
