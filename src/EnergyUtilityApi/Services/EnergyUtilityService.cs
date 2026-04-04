@@ -3,6 +3,7 @@ using EnergyUtilityApi;
 using System.Reflection;
 using System.Text.RegularExpressions;
 using Microsoft.Extensions.Options;
+using System.Xml;
 
 public class EnergyUtilityService
 {
@@ -229,50 +230,7 @@ public class EnergyUtilityService
             throw;
         }
     }
-    // used for DTO validation
-    public async Task<bool> PostcodeExists(string postcode)
-    {
-        try
-        {
-            _logger.LogDebug("Checking if postcode: {Postcode} exists in DB", postcode);
-            string shortPostcode = Regex.Replace(postcode, "[^0-9a-zA-Z]+", "")[..4];
-            string? result = await _context.ElecConsPostcodes
-                .Where(x => x.Postcode.Replace(" ", "") == shortPostcode)
-                .Select(x => x.Postcode)
-                .FirstOrDefaultAsync();
-            return result != null;
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error validating postcode: {Postcode}", postcode);
-            throw;
-        }
-    }
-    // used for DTO validation
-    // public async Task<bool> PostcodeFromScotland(string postcode)
-    // {
-    //     try
-    //     {
-    //         _logger.LogDebug("Checking if postcode: {Postcode} is from Scotland", postcode);
-    //         // get the first three characters from the postcode
-    //         string shortPostcode = Regex.Replace(postcode, "[^0-9a-zA-Z]+", "")[..3];
-    //         _logger.LogWarning("No match in DB for {Postcode} using {shortPostcode}", postcode, shortPostcode);
-    //         int needRegionId = await _context.AllPostcodeDnos
-    //         .Where(d => d.Postcode.StartsWith(shortPostcode))
-    //         .Join(_context.DnoNeedRegions,
-    //         d => d.DnoId,
-    //         dnr => dnr.DnoId,
-    //         (d, dnr) => dnr.NeedRegionSourceId)
-    //         .FirstOrDefaultAsync();
 
-    //         return needRegionId == _regionIdScotland; // the need region source id for Scotland is 12
-    //     }
-    //     catch (Exception ex)
-    //     {
-    //         _logger.LogError(ex, "Error checking if that postcode: {Postcode} is from Scotland", postcode);
-    //         throw;
-    //     }
-    // }
     private async Task<int> GetNeedRegionId(string postcode)
     {
         try

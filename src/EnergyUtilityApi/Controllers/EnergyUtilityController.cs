@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 using FluentValidation;
+using System.Linq;
 public class EnergyUtilityController : EnergyUtilityBaseController
 {
     private readonly EnergyUtilityService _service;
@@ -24,7 +25,7 @@ public class EnergyUtilityController : EnergyUtilityBaseController
             {
                 return NotFound();
             }
-            return Ok(result);
+            return Ok(new { Input = request, Output = result });
         }
         catch (Exception)
         {
@@ -45,12 +46,20 @@ public class EnergyUtilityController : EnergyUtilityBaseController
             }
 
             int length = request.Postcodes.Length;
-            SendPostcodeData[] results = new SendPostcodeData[length];
+            SendPostcodeData[]? results = new SendPostcodeData[length];
             for (int i = 0; i < length; i++)
             {
                 results[i] = await _service.GetEnergyDataByPostcode(request.Postcodes[i]);
             }
-            return Ok(results);
+
+            if (results.Any(x => x != null))
+            {
+                return Ok(new { Input = request, Output = results });
+            }
+            else
+            {
+                return NotFound();
+            }
         }
         catch (Exception)
         {

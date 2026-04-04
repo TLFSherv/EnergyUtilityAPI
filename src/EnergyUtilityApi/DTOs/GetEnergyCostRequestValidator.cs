@@ -1,10 +1,14 @@
 using FluentValidation;
+using EnergyUtilityApi;
+using System.Text.RegularExpressions;
+using Microsoft.EntityFrameworkCore;
 public class GetEnergyCostRequestValidator : AbstractValidator<GetEnergyCostRequest>
 {
     private readonly EnergyUtilityService _service;
-    public GetEnergyCostRequestValidator(EnergyUtilityService service)
+    private readonly EnergyUtilityDbContext _context;
+    public GetEnergyCostRequestValidator(EnergyUtilityService service, EnergyUtilityDbContext context)
     {
-        _service = service;
+        _context = context;
 
         RuleFor(x => x.Postcode).NotEmpty()
         .WithMessage("Postcode is required")
@@ -49,7 +53,12 @@ public class GetEnergyCostRequestValidator : AbstractValidator<GetEnergyCostRequ
         try
         {
             if (postcode == null) return false;
-            return await _service.PostcodeExists(postcode);
+            string shortPostcode = Regex.Replace(postcode, "[^0-9a-zA-Z]+", "")[..4];
+            string? result = await _context.ElecConsPostcodes
+                .Where(x => x.Postcode.Replace(" ", "") == shortPostcode)
+                .Select(x => x.Postcode)
+                .SingleOrDefaultAsync();
+            return result != null;
         }
         catch (Exception)
         {
