@@ -75,8 +75,8 @@ public class EnergyUtilityService
     {
         try
         {
-            SendPostcodeData postcodeConsumption = await GetEnergyConsumptionByPostcode(req.Postcode);
-            decimal energyConsumption = postcodeConsumption.MedianCons ?? 2700;
+            SendPostcodeData meterData = await GetPostcodeMeterData(req.Postcode);
+            decimal energyConsumption = meterData.MedianCons ?? 2700;
             int regionId = await GetNeedRegionId(req.Postcode);
             Dictionary<string, decimal?> multiplierDictionary = await GetHouseholdFeatureMultipliers(regionId);
 
@@ -120,14 +120,16 @@ public class EnergyUtilityService
     {
         try
         {
-            SendPostcodeData energyConsumption = await GetEnergyConsumptionByPostcode(postcode);
+            SendPostcodeData meterData = await GetPostcodeMeterData(postcode);
             SendPostcodeData regionData = await GetDNORegionData(postcode);
             _logger.LogInformation("Successfully retrieved energy data for postcode: {Postcode}", postcode);
             return new SendPostcodeData
             {
-                Postcode = energyConsumption.Postcode,
-                MeanCons = energyConsumption.MeanCons,
-                MedianCons = energyConsumption.MedianCons,
+                Postcode = meterData.Postcode,
+                NumOfMeters = meterData.NumOfMeters,
+                MeanCons = meterData.MeanCons,
+                MedianCons = meterData.MedianCons,
+                TotalCons = meterData.TotalCons,
                 RegionCode = regionData.RegionCode,
                 Region = regionData.Region,
                 Operator = regionData.Operator
@@ -189,16 +191,18 @@ public class EnergyUtilityService
         }
 
     }
-    private async Task<SendPostcodeData> GetEnergyConsumptionByPostcode(string postcode)
+    private async Task<SendPostcodeData> GetPostcodeMeterData(string postcode)
     {
         try
         {
             _logger.LogDebug("Fetching consumption statistics for postcode: {Postcode}", postcode);
-            SendPostcodeData result = await _context.ElecConsPostcodes
+            SendPostcodeData result = await _context.PostcodeMeters
             .Where(x => x.Postcode.Replace(" ", "") == postcode)
             .Select(x => new SendPostcodeData
             {
                 Postcode = x.Postcode,
+                NumOfMeters = x.NumMeters,
+                TotalCons = x.TotalCons,
                 MeanCons = x.MeanCons,
                 MedianCons = x.MedianCons
             })
@@ -209,11 +213,13 @@ public class EnergyUtilityService
                 // get the first three characters from the postcode
                 string shortPostcode = Regex.Replace(postcode, "[^0-9a-zA-Z]+", "")[..4];
                 _logger.LogWarning("No match in DB for {Postcode} using {ShortPostcode}", postcode, shortPostcode);
-                result = await _context.ElecConsPostcodes
+                result = await _context.PostcodeMeters
                 .Where(x => x.Postcode.Replace(" ", "") == shortPostcode)
                 .Select(x => new SendPostcodeData
                 {
                     Postcode = x.Postcode,
+                    NumOfMeters = x.NumMeters,
+                    TotalCons = x.TotalCons,
                     MedianCons = x.MedianCons,
                     MeanCons = x.MeanCons
                 })

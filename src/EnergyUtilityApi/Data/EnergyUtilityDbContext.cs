@@ -23,7 +23,7 @@ public partial class EnergyUtilityDbContext : DbContext
 
     public virtual DbSet<DnoPriceCapRate> DnoPriceCapRates { get; set; }
 
-    public virtual DbSet<ElecConsPostcode> ElecConsPostcodes { get; set; }
+    public virtual DbSet<PostcodeMeter> PostcodeMeters { get; set; }
 
     public virtual DbSet<RegionalWeight> RegionalWeights { get; set; }
 
@@ -107,13 +107,11 @@ public partial class EnergyUtilityDbContext : DbContext
                 .HasColumnName("unit_rate_pence");
         });
 
-        modelBuilder.Entity<ElecConsPostcode>(entity =>
+        modelBuilder.Entity<PostcodeMeter>(entity =>
         {
-            entity.HasKey(e => e.Postcode).HasName("postcode_cons_pkey");
+            entity.HasKey(e => e.Postcode).HasName("postcode_meters_pkey");
 
-            entity.ToTable("elec_cons_postcodes");
-
-            entity.HasIndex(e => e.Postcode, "idx_postcode_lookup");
+            entity.ToTable("postcode_meters");
 
             entity.Property(e => e.Postcode)
                 .HasMaxLength(20)
@@ -125,6 +123,7 @@ public partial class EnergyUtilityDbContext : DbContext
                 .HasPrecision(8, 3)
                 .HasColumnName("median_cons");
             entity.Property(e => e.NumMeters).HasColumnName("num_meters");
+            entity.Property(e => e.TotalCons).HasColumnName("total_cons");
         });
 
         modelBuilder.Entity<RegionalWeight>(entity =>

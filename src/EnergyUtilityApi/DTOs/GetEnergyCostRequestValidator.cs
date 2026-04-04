@@ -54,7 +54,7 @@ public class GetEnergyCostRequestValidator : AbstractValidator<GetEnergyCostRequ
         {
             if (postcode == null) return false;
             string shortPostcode = Regex.Replace(postcode, "[^0-9a-zA-Z]+", "")[..4];
-            string? result = await _context.ElecConsPostcodes
+            string? result = await _context.PostcodeMeters
                 .Where(x => x.Postcode.Replace(" ", "") == shortPostcode)
                 .Select(x => x.Postcode)
                 .SingleOrDefaultAsync();
