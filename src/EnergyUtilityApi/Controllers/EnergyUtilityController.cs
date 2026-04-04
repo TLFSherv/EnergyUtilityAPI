@@ -34,14 +34,21 @@ public class EnergyUtilityController : EnergyUtilityBaseController
 
     // get energy data for postcodes: region, dno, median and mean elec consumption
     [HttpGet]
-    public async Task<IActionResult> GetEnergyData([FromQuery(Name = "postcode")] string[] postcodes)
+    public async Task<IActionResult> GetEnergyData(GetEnergyDataRequest request, IValidator<GetEnergyDataRequest> validator)
     {
         try
         {
-            SendPostcodeData[] results = new SendPostcodeData[postcodes.Length];
-            for (int i = 0; i < postcodes.Length; i++)
+            var validationResults = validator.Validate(request);
+            if (!validationResults.IsValid)
             {
-                results[i] = await _service.GetEnergyDataByPostcode(postcodes[i]);
+                return ValidationProblem(validationResults.ToModelStateDictionary());
+            }
+
+            int length = request.Postcodes.Length;
+            SendPostcodeData[] results = new SendPostcodeData[length];
+            for (int i = 0; i < length; i++)
+            {
+                results[i] = await _service.GetEnergyDataByPostcode(request.Postcodes[i]);
             }
             return Ok(results);
         }

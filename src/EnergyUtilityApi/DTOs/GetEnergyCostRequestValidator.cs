@@ -2,15 +2,13 @@ using FluentValidation;
 public class GetEnergyCostRequestValidator : AbstractValidator<GetEnergyCostRequest>
 {
     private readonly EnergyUtilityService _service;
-    private bool IsValidPostcode { get; set; }
-    private bool IsScotlandPostcode { get; set; }
     public GetEnergyCostRequestValidator(EnergyUtilityService service)
     {
         _service = service;
 
-        RuleFor(x => x.Postcode).NotNull().NotEmpty()
+        RuleFor(x => x.Postcode).NotEmpty()
         .WithMessage("Postcode is required")
-        .Length(6, 8).WithMessage("Postcode have a length between 6 and 8 character")
+        .Length(6, 8).WithMessage("Postcode length must be between 6 and 8 characters")
         .MustAsync(BeAValidPostcode)
         .WithMessage("Invalid postcode");
 
@@ -50,22 +48,13 @@ public class GetEnergyCostRequestValidator : AbstractValidator<GetEnergyCostRequ
     {
         try
         {
-            if (postcode == null) return IsValidPostcode = false;
-            IsValidPostcode = await _service.PostcodeExists(postcode);
-            return IsValidPostcode;
+            if (postcode == null) return false;
+            return await _service.PostcodeExists(postcode);
         }
         catch (Exception)
         {
             return false;
         }
     }
-    // private async Task<bool> BeAScotlandPostcode(string postcode)
-    // {
-    //     if (IsValidPostcode && IsScotlandPostcode == null)
-    //     {
-    //         IsScotlandPostcode = await _service.PostcodeFromScotland(postcode);
-    //     }
-    //     return IsValidPostcode && IsScotlandPostcode;
-    // }
 
 }
