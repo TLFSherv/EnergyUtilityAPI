@@ -62,4 +62,15 @@ public class BasicTests : IClassFixture<WebApplicationFactory<Program>>
         Assert.Contains("Postcodes[0]", problemDetails.Errors.Keys);
     }
 
+    [Fact]
+    public async Task GetEnergyData_ReturnsOfRequest()
+    {
+        // Arrange
+        var client = _factory.CreateClient();
+        // Act
+        var response = await client.GetAsync("/api/energy-utility?Postcode=B330AB&Postcode=B330AD");
+        // Assert
+        response.EnsureSuccessStatusCode();
+    }
+
 }
