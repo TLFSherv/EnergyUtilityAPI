@@ -3,6 +3,13 @@ ASP.NET RESTful API to calculate hyper-local household energy expenditures by pr
 
 This MVC API has two endpoints - one for fetching postcode level electricity meter data for over 1 million UK postcodes, and the second calculates the yearly consumption and cost of electricity based on postcode and household features passed as query string parameters. The API uses FluidValidation for input validation. The API uses a PostgreSQL database.
 
+## Tech Stack
+![Static Badge](https://img.shields.io/badge/ASP.NET_Core-black?logo=ASP.NET)
+![Static Badge](https://img.shields.io/badge/C%23-purple?logo=C%23)
+![Static Badge](https://img.shields.io/badge/PostgreSQL-white?logo=postgresql)
+
+
+
 ## Data
 The data used by the API comes from many sources. The electricity meter data comes from the Department of Energy Security and Net Zero (DESNZ) Postcode level electricity statistics 2024. The National Energy Efficiency Data-Framework (NEED) containing 4 million records of household energy statistics was used to calculate household feature multipliers (floor area, property type, house age) per NEED region. Using the query string values the API applies the correct multiplier to the median region electricity consumption to estimate actual household consumption.
 
