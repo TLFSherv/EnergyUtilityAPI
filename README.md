@@ -1,5 +1,10 @@
 # EnergyUtilityAPI
-ASP.NET RESTful API to calculate hyper-local household energy expenditures by processing location-specific tariff data and consumption telemetry. This MVC API has two endpoints - one for fetching postcode level electricity meter data, and the second calculates the yearly consumption and cost of electricity based on postcode and household features passed as query string parameters. 
+ASP.NET RESTful API to calculate hyper-local household energy expenditures by processing location-specific tariff data and consumption telemetry. 
+
+## API Endpoints
+This MVC API has two endpoints - one for fetching postcode level electricity meter data, and the second calculates the yearly consumption and cost of electricity based on postcode and household features passed as query string parameters. 
+1. api/energy-utility?Postcode=[postcode]
+2. api/energy-utility/cost?Postcode=[postcode]&PaymentMethodId=[PaymentMethodOpt]&MeterTypeId=[MeterTypeOpt]
 
 ## Tech Stack
 ![Static Badge](https://img.shields.io/badge/ASP.NET_Core-black?logo=ASP.NET)
