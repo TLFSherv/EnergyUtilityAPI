@@ -2,15 +2,14 @@ using FluentValidation;
 using EnergyUtilityApi;
 using System.Text.RegularExpressions;
 using Microsoft.EntityFrameworkCore;
-public class GetEnergyCostRequestValidator : AbstractValidator<GetEnergyCostRequest>
+public class DataInputValidator : AbstractValidator<DataInput>
 {
-    private readonly EnergyUtilityService _service;
     private readonly EnergyUtilityDbContext _context;
-    public GetEnergyCostRequestValidator(EnergyUtilityService service, EnergyUtilityDbContext context)
+    public DataInputValidator(EnergyUtilityDbContext context)
     {
         _context = context;
 
-        RuleFor(x => x.Postcode).NotEmpty()
+        RuleForEach(x => x.Postcodes).NotEmpty()
         .WithMessage("Postcode is required")
         .Length(6, 8).WithMessage("Postcode length must be between 6 and 8 characters")
         .MustAsync(BeAValidPostcode)
@@ -40,12 +39,18 @@ public class GetEnergyCostRequestValidator : AbstractValidator<GetEnergyCostRequ
         RuleFor(x => x.NumberOfBedrooms).InclusiveBetween(1, 5)
         .WithMessage("Number of bedroom values must be between 1 and 5");
 
+        RuleFor(x => x.PaymentMethodId).InclusiveBetween(1, 3)
+        .WithMessage("Payment method id must be between 1 and 3");
+
+        RuleFor(x => x.MeterTypeId).InclusiveBetween(1, 2)
+        .WithMessage("Meter type id must be either 1 or 2");
+
         // payment method id and meter type id should be provided together
-        When(r => r.PaymentMethodId != null || r.MeterTypeId != null, () =>
-        {
-            RuleFor(x => x.PaymentMethodId).NotEmpty();
-            RuleFor(x => x.MeterTypeId).NotEmpty();
-        });
+        // When(r => r.PaymentMethodId != null || r.MeterTypeId != null, () =>
+        // {
+        //     RuleFor(x => x.PaymentMethodId).NotEmpty();
+        //     RuleFor(x => x.MeterTypeId).NotEmpty();
+        // });
     }
 
     private async Task<bool> BeAValidPostcode(string postcode, CancellationToken token)

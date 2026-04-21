@@ -1,6 +1,8 @@
 using Microsoft.AspNetCore.Mvc;
 using FluentValidation;
 using System.Linq;
+
+[Consumes("application/json")]
 public class EnergyUtilityController : EnergyUtilityBaseController
 {
     private readonly EnergyUtilityService _service;
@@ -8,63 +10,69 @@ public class EnergyUtilityController : EnergyUtilityBaseController
     {
         _service = service;
     }
-    // get yearly energy consumption and cost data
-    [HttpGet("cost/")]
-    public async Task<IActionResult> GetEnergyCost([FromQuery] GetEnergyCostRequest request, IValidator<GetEnergyCostRequest> validator)
-    {
-        try
-        {
-            var validationResults = await validator.ValidateAsync(request);
-            if (!validationResults.IsValid)
-            {
-                return ValidationProblem(validationResults.ToModelStateDictionary());
-            }
 
-            SendEnergyCostData result = await _service.GetEnergyCost(request);
-            if (result == null)
-            {
-                return NotFound();
-            }
-            return Ok(new { Input = request, Output = result });
-        }
-        catch (Exception)
-        {
-            return StatusCode(500, "An error occured while retrieving consumption data");
-        }
-    }
-
-    // get energy data for postcodes: region, dno, median and mean elec consumption
     [HttpGet]
-    public async Task<IActionResult> GetEnergyData(GetEnergyDataRequest request, IValidator<GetEnergyDataRequest> validator)
+    public async Task<IActionResult> Get([FromQuery] DataInput input, IValidator<DataInput> validator)
     {
         try
         {
-            var validationResults = validator.Validate(request);
+            var validationResults = await validator.ValidateAsync(input);
             if (!validationResults.IsValid)
             {
                 return ValidationProblem(validationResults.ToModelStateDictionary());
             }
 
-            int length = request.Postcodes.Length;
-            SendPostcodeData[]? results = new SendPostcodeData[length];
+            int length = input?.Postcodes?.Length ?? 0;
+            DataOutput[]? output = new DataOutput[length];
             for (int i = 0; i < length; i++)
             {
-                results[i] = await _service.GetEnergyDataByPostcode(request.Postcodes[i]);
+                DataRequest request = DataInputToRequest(input.Postcodes[i], input);
+                output[i] = await _service.GetData(request);
             }
 
-            if (results.Any(x => x != null))
+            if (output.Any(x => x != null))
             {
-                return Ok(new { Input = request, Output = results });
+                return Ok(new { Input = input, Output = output });
             }
             else
             {
                 return NotFound();
             }
         }
-        catch (Exception)
+        catch (Exception ex)
         {
-            return StatusCode(500, "An error occured while retrieving recipes");
+            return GetErrorResponse(ex);
         }
+    }
+    private DataRequest DataInputToRequest(string postcode, DataInput input)
+    {
+        return new DataRequest
+        {
+            Postcode = postcode,
+            PropertyType = input.PropertyType,
+            PropertyAge = input.PropertyAge,
+            FloorArea = input.FloorArea,
+            HouseholdSize = input.HouseholdSize,
+            NumberOfAdults = input.NumberOfAdults,
+            NumberOfBedrooms = input.NumberOfBedrooms,
+            PaymentMethodId = input.PaymentMethodId,
+            MeterTypeId = input.MeterTypeId
+        };
+    }
+    private IActionResult GetErrorResponse(Exception ex)
+    {
+        var error = new ProblemDetails
+        {
+            Title = "An error occured",
+            Detail = ex.Message,
+            Status = 500,
+            Type = "https://httpstatuses.com/500"
+        };
+
+        return new ObjectResult(error)
+        {
+            StatusCode = 500
+        };
     }
 
 }

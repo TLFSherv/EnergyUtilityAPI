@@ -16,23 +16,48 @@ public class EnergyUtilityService
         _logger = logger;
         _regionIdScotland = options.Value.ScotlandRegionId;
     }
-    public async Task<SendEnergyCostData> GetEnergyCost(GetEnergyCostRequest req)
+    public async Task<DataOutput> GetData(DataRequest req)
+    {
+        EnergyMeterData meterData = await GetPostcodeMeterData(req.Postcode);
+        EnergyRegionData regionData = await GetDNORegionData(req.Postcode);
+
+        ConsumptionRequest consumptionRequest = new ConsumptionRequest
+        {
+            Postcode = req.Postcode,
+            MedianConsumption = meterData.MedianCons ?? 2700,
+            PropertyType = req.PropertyType,
+            PropertyAge = req.PropertyAge,
+            FloorArea = req.FloorArea,
+            HouseholdSize = req.HouseholdSize,
+            NumberOfAdults = req.NumberOfAdults,
+            NumberOfBedrooms = req.NumberOfBedrooms
+        };
+        decimal energyConsumption = await GetEnergyConsumption(consumptionRequest);
+
+        CostRequest costRequest = new CostRequest
+        {
+            Postcode = req.Postcode,
+            EnergyConsumption = energyConsumption,
+            PaymentMethodId = req.PaymentMethodId,
+            MeterTypeId = req.MeterTypeId
+        };
+        decimal energyCost = await GetEnergyCost(costRequest);
+
+        return new DataOutput
+        {
+            Postcode = req.Postcode,
+            EnergyConsumption = energyConsumption,
+            EnergyCost = energyCost,
+            MeterData = meterData,
+            RegionData = regionData
+        };
+    }
+
+    private async Task<decimal> GetEnergyCost(CostRequest req)
     {
         try
         {
-            GetEnergyConsumptionRequest energyConsumptionRequest = new GetEnergyConsumptionRequest
-            {
-                Postcode = req.Postcode,
-                PropertyType = req.PropertyType,
-                PropertyAge = req.PropertyAge,
-                FloorArea = req.FloorArea,
-                HouseholdSize = req.HouseholdSize,
-                NumberOfAdults = req.NumberOfAdults,
-                NumberOfBedrooms = req.NumberOfBedrooms
-            };
-            decimal energyConsumption = await GetEnergyConsumption(energyConsumptionRequest);
-            decimal? energyCost = null;
-
+            decimal? energyCost = 0;
             // calculate the energy cost
             if (req.PaymentMethodId != null && req.MeterTypeId != null)
             {
@@ -53,17 +78,12 @@ public class EnergyUtilityService
                 && x.MeterTypeId == req.MeterTypeId)
                 .SingleOrDefaultAsync();
                 // use consumption and db values to calculate the cost
-                energyCost = energyConsumption * result.UnitRatePence + 365 * result.AnnualStandingCharge;
+                energyCost = req.EnergyConsumption * result.UnitRatePence + 365 * result.AnnualStandingCharge;
                 _logger.LogInformation("Successfully calculated energy cost for postcode: {Postcode}", req.Postcode);
             }
             else _logger.LogWarning("PaymentMethodId or MeterTypeId was not provided, energy consumption successfully calculated");
 
-            return new SendEnergyCostData
-            {
-                EnergyConsumption = energyConsumption,
-                EnergyCost = energyCost
-            };
-
+            return energyCost ?? 0;
         }
         catch (Exception ex)
         {
@@ -71,12 +91,12 @@ public class EnergyUtilityService
             throw;
         }
     }
-    public async Task<decimal> GetEnergyConsumption(GetEnergyConsumptionRequest req)
+
+    private async Task<decimal> GetEnergyConsumption(ConsumptionRequest req)
     {
         try
         {
-            SendPostcodeData meterData = await GetPostcodeMeterData(req.Postcode);
-            decimal energyConsumption = meterData.MedianCons ?? 2700;
+            decimal energyConsumption = req.MedianConsumption;
             int regionId = await GetNeedRegionId(req.Postcode);
             Dictionary<string, decimal?> multiplierDictionary = await GetHouseholdFeatureMultipliers(regionId);
 
@@ -108,6 +128,7 @@ public class EnergyUtilityService
                 }
             }
             _logger.LogInformation("Successfully calculated the energy consumption for postcode: {Postcode}", req.Postcode);
+
             return energyConsumption;
         }
         catch (Exception ex)
@@ -116,44 +137,19 @@ public class EnergyUtilityService
             throw;
         }
     }
-    public async Task<SendPostcodeData> GetEnergyDataByPostcode(string postcode)
-    {
-        try
-        {
-            SendPostcodeData meterData = await GetPostcodeMeterData(postcode);
-            SendPostcodeData regionData = await GetDNORegionData(postcode);
-            _logger.LogInformation("Successfully retrieved energy data for postcode: {Postcode}", postcode);
-            return new SendPostcodeData
-            {
-                Postcode = meterData.Postcode,
-                NumOfMeters = meterData.NumOfMeters,
-                MeanCons = meterData.MeanCons,
-                MedianCons = meterData.MedianCons,
-                TotalCons = meterData.TotalCons,
-                RegionCode = regionData.RegionCode,
-                Region = regionData.Region,
-                Operator = regionData.Operator
-            };
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error retrieving energy data for postcode: {Postcode}", postcode);
-            throw;
-        }
-    }
-    public async Task<SendPostcodeData> GetDNORegionData(string postcode)
+
+    private async Task<EnergyRegionData> GetDNORegionData(string postcode)
     {
         try
         {
             _logger.LogDebug("Fetching DNO region data for postcode: {Postcode}", postcode);
-            SendPostcodeData result = await _context.AllPostcodeDnos
+            EnergyRegionData result = await _context.AllPostcodeDnos
             .Where(a => a.Postcode.Replace(" ", "") == postcode)
             .Join(_context.Dnos,
             a => a.DnoId,
             dno => dno.Id,
-            (a, dno) => new SendPostcodeData
+            (a, dno) => new EnergyRegionData
             {
-                Postcode = postcode,
                 RegionCode = dno.RegionCode,
                 Region = dno.Region,
                 Operator = dno.Operator
@@ -169,9 +165,8 @@ public class EnergyUtilityService
                 .Join(_context.Dnos,
                 a => a.DnoId,
                 dno => dno.Id,
-                (a, dno) => new SendPostcodeData
+                (a, dno) => new EnergyRegionData
                 {
-                    Postcode = shortPostcode,
                     RegionCode = dno.RegionCode,
                     Region = dno.Region,
                     Operator = dno.Operator
@@ -191,16 +186,16 @@ public class EnergyUtilityService
         }
 
     }
-    private async Task<SendPostcodeData> GetPostcodeMeterData(string postcode)
+
+    private async Task<EnergyMeterData> GetPostcodeMeterData(string postcode)
     {
         try
         {
             _logger.LogDebug("Fetching consumption statistics for postcode: {Postcode}", postcode);
-            SendPostcodeData result = await _context.PostcodeMeters
+            EnergyMeterData result = await _context.PostcodeMeters
             .Where(x => x.Postcode.Replace(" ", "") == postcode)
-            .Select(x => new SendPostcodeData
+            .Select(x => new EnergyMeterData
             {
-                Postcode = x.Postcode,
                 NumOfMeters = x.NumMeters,
                 TotalCons = x.TotalCons,
                 MeanCons = x.MeanCons,
@@ -215,9 +210,8 @@ public class EnergyUtilityService
                 _logger.LogWarning("No match in DB for {Postcode} using {ShortPostcode}", postcode, shortPostcode);
                 result = await _context.PostcodeMeters
                 .Where(x => x.Postcode.Replace(" ", "") == shortPostcode)
-                .Select(x => new SendPostcodeData
+                .Select(x => new EnergyMeterData
                 {
-                    Postcode = x.Postcode,
                     NumOfMeters = x.NumMeters,
                     TotalCons = x.TotalCons,
                     MedianCons = x.MedianCons,
@@ -274,6 +268,7 @@ public class EnergyUtilityService
             throw;
         }
     }
+
     private async Task<Dictionary<string, decimal?>> GetHouseholdFeatureMultipliers(int regionId)
     {
         try

@@ -5,6 +5,17 @@ using FluentValidation;
 WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
 var connString = builder.Configuration.GetConnectionString("DbConnection");
 
+var MyAllowSpecificOrigins = "_myAllowSpecificOrigins";
+// specify the allowed origins for CORS
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy(name: MyAllowSpecificOrigins, policy =>
+        {
+            policy.WithOrigins("http://localhost:5094*")
+             .SetIsOriginAllowedToAllowWildcardSubdomains();
+        });
+});
+
 builder.Services.AddDbContext<EnergyUtilityDbContext>( // register DbContext
     options => options.UseNpgsql(connString) // specify provider
 );
@@ -27,7 +38,8 @@ if (!app.Environment.IsDevelopment())
 {
     app.UseExceptionHandler();
 }
-
+// add CORS middleware
+app.UseCors(MyAllowSpecificOrigins);
 app.UseStatusCodePages();
 // add middleware to use controllers
 app.MapControllers();

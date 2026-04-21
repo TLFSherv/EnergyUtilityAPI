@@ -1,13 +1,15 @@
-public record GetEnergyCostRequest
+using Microsoft.AspNetCore.Mvc;
+using System.ComponentModel.DataAnnotations;
+public record DataRequest
 {
-    public string? Postcode { get; set; }
-    public int? PaymentMethodId { get; set; }
-    public int? MeterTypeId { get; set; }
+    public required string Postcode { get; set; }
     public int? PropertyType { get; set; }
     public int? PropertyAge { get; set; }
     public int? FloorArea { get; set; }
     public int? HouseholdSize { get; set; }
     public int? NumberOfAdults { get; set; }
     public int? NumberOfBedrooms { get; set; }
+    public int PaymentMethodId { get; set; } = 1;
+    public int MeterTypeId { get; set; } = 1;
 
 }
