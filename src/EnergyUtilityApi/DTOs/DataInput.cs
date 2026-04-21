@@ -10,7 +10,7 @@ public record DataInput
     public int? HouseholdSize { get; set; }
     public int? NumberOfAdults { get; set; }
     public int? NumberOfBedrooms { get; set; }
-    public int PaymentMethodId { get; set; } = 1;
-    public int MeterTypeId { get; set; } = 1;
+    public int PaymentMethod { get; set; } = 1;
+    public int MeterType { get; set; } = 1;
 
 }

@@ -39,8 +39,8 @@ public class EnergyUtilityService
         {
             Postcode = req.Postcode,
             EnergyConsumption = energyConsumption,
-            PaymentMethodId = req.PaymentMethodId,
-            MeterTypeId = req.MeterTypeId
+            PaymentMethod = req.PaymentMethod,
+            MeterType = req.MeterType
         };
         decimal energyCost = await GetEnergyCost(costRequest);
 
@@ -60,7 +60,7 @@ public class EnergyUtilityService
         {
             decimal? energyCost = 0;
             // calculate the energy cost
-            if (req.PaymentMethodId != null && req.MeterTypeId != null)
+            if (req.PaymentMethod != null && req.MeterType != null)
             {
                 _logger.LogDebug("Fetching price cap and rate data from database for postcode: {Postcode}", req.Postcode);
                 var result = await _context.AllPostcodeDnos
@@ -72,11 +72,11 @@ public class EnergyUtilityService
                 {
                     AnnualStandingCharge = d.AnnualStandingCharge,
                     UnitRatePence = d.UnitRatePence,
-                    PaymentMethodId = d.PaymentMethodId,
-                    MeterTypeId = d.MeterTypeId
+                    PaymentMethod = d.PaymentMethodId,
+                    MeterType = d.MeterTypeId
                 })
-                .Where(x => x.PaymentMethodId == req.PaymentMethodId
-                && x.MeterTypeId == req.MeterTypeId)
+                .Where(x => x.PaymentMethod == req.PaymentMethod
+                && x.MeterType == req.MeterType)
                 .SingleOrDefaultAsync();
                 // use consumption and db values to calculate the cost
                 energyCost = req.EnergyConsumption * result.UnitRatePence + 365 * result.AnnualStandingCharge;

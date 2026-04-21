@@ -55,8 +55,8 @@ public class EnergyUtilityController : EnergyUtilityBaseController
             HouseholdSize = input.HouseholdSize,
             NumberOfAdults = input.NumberOfAdults,
             NumberOfBedrooms = input.NumberOfBedrooms,
-            PaymentMethodId = input.PaymentMethodId,
-            MeterTypeId = input.MeterTypeId
+            PaymentMethod = input.PaymentMethod,
+            MeterType = input.MeterType
         };
     }
     private IActionResult GetErrorResponse(Exception ex)
