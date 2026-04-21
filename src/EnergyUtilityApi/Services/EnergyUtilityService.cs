@@ -24,7 +24,7 @@ public class EnergyUtilityService
         ConsumptionRequest consumptionRequest = new ConsumptionRequest
         {
             Postcode = req.Postcode,
-            MedianConsumption = meterData.MedianCons ?? 2700,
+            MedianConsumption = meterData?.MedianCons ?? 2700,
             PropertyType = req.PropertyType,
             PropertyAge = req.PropertyAge,
             FloorArea = req.FloorArea,
@@ -32,6 +32,7 @@ public class EnergyUtilityService
             NumberOfAdults = req.NumberOfAdults,
             NumberOfBedrooms = req.NumberOfBedrooms
         };
+
         decimal energyConsumption = await GetEnergyConsumption(consumptionRequest);
 
         CostRequest costRequest = new CostRequest
@@ -209,7 +210,7 @@ public class EnergyUtilityService
                 string shortPostcode = Regex.Replace(postcode, "[^0-9a-zA-Z]+", "")[..4];
                 _logger.LogWarning("No match in DB for {Postcode} using {ShortPostcode}", postcode, shortPostcode);
                 result = await _context.PostcodeMeters
-                .Where(x => x.Postcode.Replace(" ", "") == shortPostcode)
+                .Where(x => x.Postcode.Replace(" ", "").StartsWith(shortPostcode))
                 .Select(x => new EnergyMeterData
                 {
                     NumOfMeters = x.NumMeters,
@@ -218,15 +219,15 @@ public class EnergyUtilityService
                     MeanCons = x.MeanCons
                 })
                 .FirstOrDefaultAsync();
-                _logger.LogInformation("Successfully fetched consumption statistics for postcode: {Postcode}", shortPostcode);
+                _logger.LogInformation("Successfully fetched meter data for postcode: {Postcode}", shortPostcode);
             }
-            else _logger.LogInformation("Successfully fetched consumption statistics for postcode: {Postcode}", postcode);
+            else _logger.LogInformation("Successfully fetched meter data for postcode: {Postcode}", postcode);
 
             return result;
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error retrieving consumption statistics for postcode: {Postcode}", postcode);
+            _logger.LogError(ex, "Error retrieving meter data for postcode: {Postcode}", postcode);
             throw;
         }
     }

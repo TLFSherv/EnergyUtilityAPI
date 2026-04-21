@@ -16,61 +16,32 @@ public class BasicTests : IClassFixture<WebApplicationFactory<Program>>
         _factory = factory;
     }
 
-    [Fact]
-    public async Task GetEnergyCostScotland_ReturnsOkResult()
+    [Theory]
+    [InlineData("/api/energy-utility?Postcode=AB10AG&PropertyType=6&PropertyAge=11&NumberOfAdults=3&FloorArea=4")]
+    [InlineData("/api/energy-utility?Postcode=B330AA")]
+    [InlineData("/api/energy-utility?Postcode=B330AB&Postcode=B330AD")]
+    public async Task GetData_ReturnsOkResult(string request)
     {
         var client = _factory.CreateClient();
-        var response = await client.GetAsync("/api/energy-utility/cost?Postcode=AB10AG&PropertyType=6&PropertyAge=11&NumberOfAdults=3&FloorArea=4");
+        var response = await client.GetAsync(request);
         response.EnsureSuccessStatusCode();
     }
 
-    [Fact]
-    public async Task GetEnergyData_ReturnsOkResult()
-    {
-        var client = _factory.CreateClient();
-        var response = await client.GetAsync("/api/energy-utility?Postcode=B330AA");
-        response.EnsureSuccessStatusCode();
-    }
-
-    [Fact]
-    public async Task GetEnergyCost_ReturnsBadRequestWhenPostcode()
+    [Theory]
+    [InlineData("/api/energy-utility?Postcode=A")]
+    [InlineData("/api/energy-utility?Postcode=B33&Postcode=B330AB&Postcode=B330AD")]
+    public async Task GetData_ReturnsBadRequestWhenPostcode(string request)
     {
         // Arrange
         var client = _factory.CreateClient();
         // Act
-        var response = await client.GetAsync("/api/energy-utility/cost?Postcode=A");
-        // Assert
-        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
-
-        var problemDetails = await response.Content.ReadFromJsonAsync<ValidationProblemDetails>();
-        Assert.NotNull(problemDetails);
-        Assert.Contains("Postcode", problemDetails.Errors.Keys);
-    }
-
-    [Fact]
-    public async Task GetEnergyData_ReturnsBadRequestWhenPostcode()
-    {
-        // Arrange
-        var client = _factory.CreateClient();
-        // Act
-        var response = await client.GetAsync("/api/energy-utility?Postcode=B33&Postcode=B330AB&Postcode=B330AD");
+        var response = await client.GetAsync(request);
         // Assert
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
 
         var problemDetails = await response.Content.ReadFromJsonAsync<ValidationProblemDetails>();
         Assert.NotNull(problemDetails);
         Assert.Contains("Postcodes[0]", problemDetails.Errors.Keys);
-    }
-
-    [Fact]
-    public async Task GetEnergyData_ReturnsOfRequest()
-    {
-        // Arrange
-        var client = _factory.CreateClient();
-        // Act
-        var response = await client.GetAsync("/api/energy-utility?Postcode=B330AB&Postcode=B330AD");
-        // Assert
-        response.EnsureSuccessStatusCode();
     }
 
 }

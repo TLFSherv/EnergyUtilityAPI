@@ -60,9 +60,9 @@ public class DataInputValidator : AbstractValidator<DataInput>
             if (postcode == null) return false;
             string shortPostcode = Regex.Replace(postcode, "[^0-9a-zA-Z]+", "")[..4];
             string? result = await _context.PostcodeMeters
-                .Where(x => x.Postcode.Replace(" ", "") == shortPostcode)
+                .Where(x => x.Postcode.Replace(" ", "").StartsWith(shortPostcode))
                 .Select(x => x.Postcode)
-                .SingleOrDefaultAsync();
+                .FirstOrDefaultAsync();
             return result != null;
         }
         catch (Exception)
