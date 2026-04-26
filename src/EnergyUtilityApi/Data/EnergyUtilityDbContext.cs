@@ -35,6 +35,7 @@ public partial class EnergyUtilityDbContext : DbContext
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
+        modelBuilder.HasDefaultSchema("api");
         modelBuilder.Entity<AllPostcodeDno>(entity =>
         {
             entity.HasKey(e => e.Postcode).HasName("postcodes_with_dno_pkey");
