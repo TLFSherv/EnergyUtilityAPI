@@ -1,7 +1,9 @@
+using Microsoft.AspNetCore.Authorization;
+using System.ComponentModel.DataAnnotations;
 using Microsoft.AspNetCore.Mvc;
 using FluentValidation;
-using System.Linq;
 
+[Authorize(AuthenticationSchemes = "ApiKeyScheme")]
 [Consumes("application/json")]
 public class EnergyUtilityController : EnergyUtilityBaseController
 {
@@ -12,7 +14,9 @@ public class EnergyUtilityController : EnergyUtilityBaseController
     }
 
     [HttpGet]
-    public async Task<IActionResult> Get([FromQuery] DataInput input, IValidator<DataInput> validator)
+    public async Task<IActionResult> Get(
+        [FromQuery] DataInput input,
+        IValidator<DataInput> validator)
     {
         try
         {

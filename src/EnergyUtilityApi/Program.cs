@@ -1,6 +1,8 @@
 using Microsoft.EntityFrameworkCore;
 using EnergyUtilityApi;
 using FluentValidation;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Authentication;
 
 WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
 var connString = builder.Configuration.GetConnectionString("DbConnection");
@@ -31,6 +33,9 @@ builder.Services.AddValidatorsFromAssemblyContaining<Program>();
 builder.Services.Configure<EnergyUtilityServiceSettings>(
     builder.Configuration.GetSection("EnergyUtilityServiceSettings")
 );
+// register authentication scheme
+builder.Services.AddAuthentication()
+    .AddScheme<AuthenticationSchemeOptions, ApiKeyHandler>("ApiKeyScheme", null);
 
 WebApplication app = builder.Build();
 

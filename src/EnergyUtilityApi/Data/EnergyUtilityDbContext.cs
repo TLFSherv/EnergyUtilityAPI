@@ -15,6 +15,7 @@ public partial class EnergyUtilityDbContext : DbContext
     {
     }
 
+    public virtual DbSet<UserApiKey> UserApiKeys { get; set; }
     public virtual DbSet<AllPostcodeDno> AllPostcodeDnos { get; set; }
 
     public virtual DbSet<Dno> Dnos { get; set; }
@@ -36,6 +37,20 @@ public partial class EnergyUtilityDbContext : DbContext
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.HasDefaultSchema("api");
+        base.OnModelCreating(modelBuilder);
+
+        modelBuilder.Entity<UserApiKey>(entity =>
+        {
+            entity.HasKey(e => e.ApiKey).HasName("user_api_keys_pkey");
+
+            entity.ToTable("user_api_keys", "auth");
+
+            entity.Property(e => e.ApiKey).HasColumnName("api_key");
+            entity.Property(e => e.UserId).HasColumnName("user_id");
+            entity.Property(e => e.IsActive).HasColumnName("is_active");
+        });
+
+
         modelBuilder.Entity<AllPostcodeDno>(entity =>
         {
             entity.HasKey(e => e.Postcode).HasName("postcodes_with_dno_pkey");
