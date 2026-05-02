@@ -37,6 +37,8 @@ builder.Services.Configure<EnergyUtilityServiceSettings>(
 builder.Services.AddAuthentication()
     .AddScheme<AuthenticationSchemeOptions, ApiKeyHandler>("ApiKeyScheme", null);
 
+builder.Services.AddMemoryCache();
+
 WebApplication app = builder.Build();
 
 if (!app.Environment.IsDevelopment())
