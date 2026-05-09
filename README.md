@@ -1,5 +1,7 @@
 # EnergyUtilityAPI
-ASP.NET RESTful API to calculate hyper-local household energy expenditures by processing location-specific tariff data and consumption telemetry. 
+This project is a high-performance RESTful API designed to calculate hyper-local household energy expenditures by processing location-specific tariff data and consumption telemetry. Built using ASP.NET Core, the system ingests raw utility data and applies deterministic power models to provide precise financial projections and usage forecasts. I architected the backend to handle complex relational data mapping with Entity Framework Core, ensuring that high-density datasets—such as regional energy grid fluctuations and varying tariff structures—are processed with enterprise-grade reliability and data integrity.
+
+To ensure the API is "client-ready" for modern frontends, I focused on building a highly interoperable architecture that delivers sub-second response times for data-heavy queries. The service is engineered to integrate seamlessly with analytical dashboards (such as those built in Next.js and D3.js), transforming raw backend telemetry into actionable insights for users. This project serves as a deep dive into C# design patterns, asynchronous programming, and the optimization of relational databases for high-stakes environmental and financial modeling.
 
 ## API Endpoints
 This MVC API has two endpoints - one for fetching postcode level electricity meter data, and the second calculates the yearly consumption and cost of electricity based on postcode and household features passed as query string parameters. 
