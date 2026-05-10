@@ -13,7 +13,7 @@ builder.Services.AddCors(options =>
 {
     options.AddPolicy(name: MyAllowSpecificOrigins, policy =>
         {
-            policy.WithOrigins("http://localhost:5094*")
+            policy.WithOrigins("https://energyutilityapp.onrender.com*")
              .SetIsOriginAllowedToAllowWildcardSubdomains();
         });
 });
