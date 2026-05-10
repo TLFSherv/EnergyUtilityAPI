@@ -5,7 +5,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Authentication;
 
 WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
-var connString = builder.Configuration.GetConnectionString("DbConnection");
+var connString = builder.Configuration.GetConnectionString("DefaultConnection");
 
 var MyAllowSpecificOrigins = "_myAllowSpecificOrigins";
 // specify the allowed origins for CORS
